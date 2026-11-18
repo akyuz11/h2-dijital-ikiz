@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--ARTIFACT-START-->
+<title>Güneş-Hidrojen Dijital İkizi</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=Share+Tech+Mono&display=swap">
+<style>
+/* Layout: lab bench — the instrument rack is the hero (left), operator console on the right, analysis tabs below */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --surface-2: #f5f7f9;
+  --fg: #14202b;
+  --muted: #586877;
+  --line: #d3dae1;
+  --accent: #0a5cad;
+  --accent-fg: #ffffff;
+  --band: #0a5cad;
+  --band-fg: #ffffff;
+  --stage: #dfe6ec;
+  --stage-line: #cbd4dc;
+  --h2: #138fb4;
+  --o2: #cf5530;
+  --sun: #e6a300;
+  --ok: #2f8a4a;
+  --warn: #b7791f;
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, sans-serif;
+  --font-data: "Share Tech Mono", ui-monospace, "Consolas", monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141b; --surface: #16202b; --surface-2: #1b2734; --fg: #e3eaf0; --muted: #94a4b3;
+    --line: #2b3a48; --accent: #5aa7f2; --accent-fg: #06121e; --band: #0b3f75; --band-fg: #ffffff;
+    --stage: #18232e; --stage-line: #223040; --h2: #4cc6ea; --o2: #f08a63; --sun: #ffc23d;
+    --ok: #5cc27a; --warn: #e0a64a; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141b; --surface: #16202b; --surface-2: #1b2734; --fg: #e3eaf0; --muted: #94a4b3;
+  --line: #2b3a48; --accent: #5aa7f2; --accent-fg: #06121e; --band: #0b3f75; --band-fg: #ffffff;
+  --stage: #18232e; --stage-line: #223040; --h2: #4cc6ea; --o2: #f08a63; --sun: #ffc23d;
+  --ok: #5cc27a; --warn: #e0a64a; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--band); }
+.wrap { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); max-width: 1480px; margin: 0 auto; }
+header.band { background: var(--band); color: var(--band-fg); }
+header .wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-block: 14px; }
+.brand h1 { font-family: var(--font-display); font-weight: 600; font-size: clamp(1.5rem, 3vw, 2.1rem); margin: 0; letter-spacing: .01em; text-wrap: balance; line-height: 1.1; }
+.brand p { margin: 2px 0 0; opacity: .85; font-size: .9rem; }
+.hdr-actions { display: flex; gap: 8px; }
+.hdr-actions button { font: 600 .85rem var(--font-body); color: var(--band-fg); background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.35); border-radius: 6px; padding: 6px 12px; cursor: pointer; }
+.hdr-actions button:hover { background: rgba(255,255,255,.22); }
+button:focus-visible, .tab:focus-visible, input:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+
+main.wrap { padding-block: 18px 40px; display: grid; gap: 18px; }
+.lab { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 18px; align-items: start; }
+@media (max-width: 1020px) { .lab { grid-template-columns: minmax(0, 1fr); } }
+
+.stage { background: var(--stage); border: 1px solid var(--stage-line); border-radius: 10px; overflow: hidden; min-width: 0; }
+.stage svg { display: block; width: 100%; height: auto; }
+
+/* console */
+.console { display: grid; gap: 14px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: grid; gap: 10px; }
+.panel h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .08em; margin: 0; color: var(--muted); }
+.light-ctl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.big { font: 700 1.05rem var(--font-display); letter-spacing: .04em; text-transform: uppercase; border-radius: 10px; padding: 14px 8px; cursor: pointer; border: 2px solid var(--accent); display: flex; align-items: center; justify-content: center; gap: 8px; transition: transform .08s, background .15s; }
+.big:active { transform: scale(.97); }
+.big.dec { background: var(--surface); color: var(--accent); }
+.big.inc { background: var(--accent); color: var(--accent-fg); }
+.big:disabled { opacity: .4; cursor: not-allowed; }
+.big svg { width: 22px; height: 22px; }
+.meter { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+.meter span { height: 12px; border-radius: 3px; background: var(--line); transition: background .2s; }
+.meter span.on { background: var(--sun); }
+.lvl-info { display: flex; justify-content: space-between; gap: 8px; font-size: .9rem; color: var(--muted); flex-wrap: wrap; }
+.lvl-info b { color: var(--fg); font-family: var(--font-data); font-weight: 400; font-size: 1rem; }
+.seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { flex: 1; background: var(--surface); color: var(--fg); border: 0; border-right: 1px solid var(--line); padding: 8px 6px; font: 600 .9rem var(--font-body); cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button.on { background: var(--accent); color: var(--accent-fg); }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn { background: var(--surface-2); color: var(--fg); border: 1px solid var(--line); border-radius: 7px; padding: 7px 12px; font: 600 .88rem var(--font-body); cursor: pointer; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.toggle { position: relative; width: 52px; height: 28px; border-radius: 14px; background: var(--line); border: 0; cursor: pointer; flex: none; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: left .2s; }
+.toggle[aria-pressed="true"] { background: var(--h2); }
+.toggle[aria-pressed="true"]::after { left: 27px; }
+.sw-display { font-family: var(--font-data); font-size: 2rem; letter-spacing: .04em; line-height: 1; font-variant-numeric: tabular-nums; }
+.sw-sub { color: var(--muted); font-size: .88rem; }
+.sw-sub b { color: var(--h2); font-family: var(--font-data); font-weight: 400; font-size: 1rem; }
+label.chk { display: flex; gap: 6px; align-items: center; font-size: .88rem; color: var(--muted); }
+.hint { font-size: .82rem; color: var(--muted); margin: 0; }
+
+/* energy chain */
+.chain { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.chain .node { padding: 12px 14px; border-right: 1px solid var(--line); display: grid; gap: 2px; align-content: start; position: relative; min-width: 0; }
+.chain .node:last-child { border-right: 0; }
+.chain .node::after { content: ""; position: absolute; right: -7px; top: 50%; width: 12px; height: 12px; background: var(--surface); border-top: 1px solid var(--line); border-right: 1px solid var(--line); transform: translateY(-50%) rotate(45deg); z-index: 1; }
+.chain .node:last-child::after { display: none; }
+.chain .k { font: 600 .78rem var(--font-display); text-transform: uppercase; letter-spacing: .09em; color: var(--muted); }
+.chain .v { font-family: var(--font-data); font-size: 1.35rem; line-height: 1.15; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chain .s { font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.chain .stripe { height: 3px; border-radius: 2px; margin-bottom: 6px; }
+@media (max-width: 900px) { .chain { grid-template-columns: repeat(3, minmax(0, 1fr)); } .chain .node:nth-child(3) { border-right: 0; } .chain .node:nth-child(-n+3) { border-bottom: 1px solid var(--line); } .chain .node:nth-child(3)::after { display: none; } }
+@media (max-width: 520px) { .chain { grid-template-columns: repeat(2, minmax(0, 1fr)); } .chain .node { border-bottom: 1px solid var(--line); } .chain .node:nth-child(3) { border-right: 1px solid var(--line); } .chain .node:nth-child(even) { border-right: 0; } .chain .node::after { display: none; } .chain .v { font-size: 1.15rem; } }
+
+/* tabs */
+.tabs { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.tablist { display: flex; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab { background: none; border: 0; border-bottom: 3px solid transparent; padding: 12px 16px; font: 600 .95rem var(--font-display); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); cursor: pointer; white-space: nowrap; }
+.tab[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); }
+.tabpanel { padding: 16px; min-width: 0; }
+.charts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 24px; }
+@media (max-width: 860px) { .charts { grid-template-columns: minmax(0, 1fr); } }
+.chart-box { min-width: 0; display: grid; gap: 6px; }
+.chart-box h3, .tabpanel h3 { font: 600 1rem var(--font-display); letter-spacing: .03em; margin: 0; }
+.chart-box .cv { position: relative; height: 260px; }
+.chart-box p { margin: 0; font-size: .82rem; color: var(--muted); }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; }
+table { border-collapse: collapse; width: 100%; font-size: .86rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { background: var(--surface-2); font: 600 .8rem var(--font-body); color: var(--muted); position: sticky; top: 0; }
+th:first-child, td:first-child { text-align: left; }
+tbody tr:last-child td { border-bottom: 0; }
+.empty { color: var(--muted); text-align: center !important; padding: 18px; }
+.eff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.eff { display: grid; gap: 6px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.eff .lbl { font-size: .85rem; color: var(--muted); }
+.eff .num { font-family: var(--font-data); font-size: 1.6rem; }
+.bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .4s; }
+.eff .f { font-size: .8rem; color: var(--muted); font-family: var(--font-data); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; margin-top: 16px; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.notes { max-width: 78ch; display: grid; gap: 10px; }
+.notes p, .notes li { margin: 0; }
+.notes ul { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.notes a { color: var(--accent); }
+.pill { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: .78rem; font-weight: 600; }
+.pill.warn { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+.pill.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok); }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--fg); color: var(--bg); padding: 8px 16px; border-radius: 8px; font-size: .9rem; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 20; }
+.toast.show { opacity: 1; }
+footer.wrap { padding-block: 0 28px; color: var(--muted); font-size: .8rem; }
+
+/* svg text classes */
+.lbl-panel { font: 600 13px var(--font-display); letter-spacing: .06em; fill: #3b4a58; text-transform: uppercase; }
+.lbl-small { font: 500 11px var(--font-body); fill: #4d5c6a; }
+.lbl-tick { font: 400 10px var(--font-data); fill: #31404d; }
+.led { font: 400 40px var(--font-data); fill: #ff3b2f; }
+.led-u { font: 600 18px var(--font-display); fill: #31404d; }
+.chan { cursor: pointer; }
+.chan rect { fill: #e7ecf1; stroke: #9aa6b2; }
+.chan.on rect { fill: #0a5cad; stroke: #0a5cad; }
+.chan text { font: 600 11px var(--font-body); fill: #31404d; pointer-events: none; }
+.chan.on text { fill: #ffffff; }
+.valve { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .big, .meter span, .toggle::after, .bar i { transition: none; } }
+</style>
+</head>
+<body>
+<header class="band">
+  <div class="wrap">
+    <div class="brand">
+      <h1 data-i18n="title">Güneş-Hidrojen Dijital İkizi</h1>
+      <p data-i18n="subtitle">Dr FuelCell® Professional uzak deney seti · ışık → PV → elektrolizör → H₂ deposu → yakıt hücresi → pervane</p>
+    </div>
+    <div class="hdr-actions">
+      <button id="btnLang" type="button" aria-label="Language">EN</button>
+      <button id="btnTheme" type="button" data-i18n="theme">Tema</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="lab">
+    <div class="stage">
+      <svg id="scene" viewBox="0 0 1100 840" role="img" aria-labelledby="sceneTitle">
+        <title id="sceneTitle">Dr FuelCell Professional deney rafı: lamba, güneş paneli, elektrolizör, gaz depoları, yakıt hücresi, yük modülü ve ölçüm ünitesi</title>
+        <defs>
+          <linearGradient id="gAlu" x1="0" x2="1"><stop offset="0" stop-color="#9aa2ab"/><stop offset=".45" stop-color="#eef1f4"/><stop offset="1" stop-color="#8e969f"/></linearGradient>
+          <linearGradient id="gAluH" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#eef1f4"/><stop offset="1" stop-color="#9aa2ab"/></linearGradient>
+          <linearGradient id="gPanel" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fdfefe"/><stop offset="1" stop-color="#e6ebef"/></linearGradient>
+          <linearGradient id="gCell" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#1d2c4c"/><stop offset=".5" stop-color="#2a3f6b"/><stop offset="1" stop-color="#162340"/></linearGradient>
+          <radialGradient id="gPvGlow" cx=".2" cy=".5" r=".9"><stop offset="0" stop-color="#fff6c8" stop-opacity=".95"/><stop offset="1" stop-color="#ffd76a" stop-opacity="0"/></radialGradient>
+          <linearGradient id="gBeam" x1="0" x2="1"><stop offset="0" stop-color="#fff2b0" stop-opacity=".95"/><stop offset="1" stop-color="#fff2b0" stop-opacity="0"/></linearGradient>
+          <radialGradient id="gBulb"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#fff1a6"/><stop offset="1" stop-color="#ffb52e" stop-opacity="0"/></radialGradient>
+          <linearGradient id="gGlass" x1="0" x2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".55"/><stop offset=".25" stop-color="#e9f3f8" stop-opacity=".15"/><stop offset=".8" stop-color="#e9f3f8" stop-opacity=".1"/><stop offset="1" stop-color="#ffffff" stop-opacity=".5"/></linearGradient>
+          <linearGradient id="gWater" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7cc4ea" stop-opacity=".75"/><stop offset="1" stop-color="#3f93c6" stop-opacity=".85"/></linearGradient>
+          <linearGradient id="gH2gas" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#d9f3fb"/><stop offset="1" stop-color="#bfe8f6"/></linearGradient>
+          <linearGradient id="gO2gas" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fde8de"/><stop offset="1" stop-color="#f9d6c6"/></linearGradient>
+          <linearGradient id="gStack" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#7d8994"/><stop offset="1" stop-color="#4c5660"/></linearGradient>
+          <filter id="fGlow" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="fSoft"><feGaussianBlur stdDeviation="3"/></filter>
+          <filter id="fShadow" x="-10%" y="-10%" width="130%" height="130%"><feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#0a1824" flood-opacity=".22"/></filter>
+          <clipPath id="clipO2"><rect x="684" y="402" width="52" height="226" rx="6"/></clipPath>
+          <clipPath id="clipH2"><rect x="804" y="402" width="52" height="226" rx="6"/></clipPath>
+        </defs>
+
+        <!-- floor -->
+        <rect x="0" y="808" width="1100" height="32" fill="#000" opacity=".06"/>
+
+        <!-- lamp (behind beam) -->
+        <g id="lamp">
+          <line x1="104" y1="640" x2="58" y2="806" stroke="#5b636b" stroke-width="5" stroke-linecap="round"/>
+          <line x1="104" y1="640" x2="150" y2="806" stroke="#5b636b" stroke-width="5" stroke-linecap="round"/>
+          <line x1="104" y1="640" x2="104" y2="806" stroke="#5b636b" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="104" cy="640" r="7" fill="#3f474f"/>
+          <path d="M70,588 L140,552 L140,668 L70,632 Z" fill="#dfe3e7" stroke="#8a939c" stroke-width="2"/>
+          <ellipse cx="70" cy="610" rx="16" ry="26" fill="#9aa2ab" stroke="#6d757d" stroke-width="2"/>
+          <g stroke="#6d757d" stroke-width="1.5"><line x1="78" y1="596" x2="78" y2="624"/><line x1="86" y1="592" x2="86" y2="628"/></g>
+          <ellipse cx="140" cy="610" rx="10" ry="58" fill="#b8bfc6" stroke="#8a939c" stroke-width="2"/>
+          <ellipse id="bulbGlow" cx="146" cy="610" rx="40" ry="70" fill="url(#gBulb)" opacity=".8"/>
+          <ellipse id="bulb" cx="140" cy="610" rx="8" ry="52" fill="#fff4bf" opacity=".9"/>
+          <text x="104" y="535" text-anchor="middle" class="lbl-small" data-i18n="lampLbl">PAR lamba</text>
+        </g>
+
+        <!-- rack -->
+        <g id="rack" filter="url(#fShadow)">
+          <rect x="182" y="796" width="84" height="12" rx="3" fill="url(#gAluH)"/>
+          <rect x="1004" y="796" width="84" height="12" rx="3" fill="url(#gAluH)"/>
+          <rect x="217" y="28" width="14" height="772" fill="url(#gAlu)"/>
+          <rect x="1039" y="28" width="14" height="772" fill="url(#gAlu)"/>
+          <rect x="217" y="40" width="836" height="8" fill="url(#gAluH)"/>
+          <rect x="217" y="338" width="836" height="10" fill="url(#gAluH)"/>
+          <rect x="217" y="706" width="836" height="8" fill="url(#gAluH)"/>
+        </g>
+
+        <!-- MEASURING UNIT -->
+        <g id="meter">
+          <rect x="242" y="54" width="198" height="278" rx="4" fill="url(#gPanel)" stroke="#b9c2ca"/>
+          <text x="256" y="78" class="lbl-panel">Voltage / Gerilim</text>
+          <rect x="256" y="88" width="134" height="56" rx="3" fill="#1b0706" stroke="#3a1210"/>
+          <text id="ledV" x="382" y="132" text-anchor="end" class="led" filter="url(#fGlow)">0.00</text>
+          <text x="400" y="126" class="led-u">V</text>
+          <text x="256" y="172" class="lbl-panel">Current / Akım</text>
+          <rect x="256" y="182" width="134" height="56" rx="3" fill="#1b0706" stroke="#3a1210"/>
+          <text id="ledA" x="382" y="226" text-anchor="end" class="led" filter="url(#fGlow)">0.00</text>
+          <text x="400" y="220" class="led-u">A</text>
+          <g class="chan" id="chPV" role="button" tabindex="0" aria-label="PV / Elektrolizör">
+            <rect x="256" y="262" width="82" height="24" rx="12"/><text x="297" y="278" text-anchor="middle">PV · ELZ</text>
+          </g>
+          <g class="chan on" id="chFC" role="button" tabindex="0" aria-label="Yakıt hücresi / Motor">
+            <rect x="344" y="262" width="82" height="24" rx="12"/><text x="385" y="278" text-anchor="middle" data-i18n="chFC">YH · Motor</text>
+          </g>
+          <text x="256" y="312" class="lbl-small" data-i18n="meterLbl">Ölçüm ünitesi · 0–2 / 0–20 A·V</text>
+        </g>
+
+        <!-- LOAD MODULE with motor + propeller -->
+        <g id="load">
+          <rect x="452" y="54" width="104" height="278" rx="4" fill="url(#gPanel)" stroke="#b9c2ca"/>
+          <rect x="492" y="96" width="26" height="40" rx="4" fill="#5a646e"/>
+          <rect x="497" y="134" width="16" height="10" fill="#3d454d"/>
+          <g id="propWrap" transform="translate(505,104)">
+            <circle id="propBlur" r="50" fill="#1f6fd1" opacity="0" filter="url(#fSoft)"/>
+            <g id="prop">
+              <path d="M0,-4 C10,-14 14,-44 4,-50 C-4,-46 -6,-20 0,-4 Z" fill="#1f6fd1"/>
+              <path d="M0,-4 C10,-14 14,-44 4,-50 C-4,-46 -6,-20 0,-4 Z" fill="#1f6fd1" transform="rotate(120)"/>
+              <path d="M0,-4 C10,-14 14,-44 4,-50 C-4,-46 -6,-20 0,-4 Z" fill="#1f6fd1" transform="rotate(240)"/>
+            </g>
+            <circle r="7" fill="#d4dae0" stroke="#5a646e" stroke-width="2"/>
+          </g>
+          <text id="rpmTxt" x="504" y="176" text-anchor="middle" class="lbl-tick">0 rpm</text>
+          <circle cx="504" cy="210" r="14" fill="#eef1f4" stroke="#7d8994" stroke-width="2"/>
+          <path d="M494,210 L514,210 M504,200 L504,220" stroke="#7d8994" stroke-width="2"/>
+          <text x="504" y="244" text-anchor="middle" class="lbl-small" data-i18n="motorLbl">Motor</text>
+          <text x="504" y="270" text-anchor="middle" class="lbl-small" data-i18n="loadLbl">Yük modülü</text>
+          <circle cx="482" cy="300" r="7" fill="#d32f2f" stroke="#7a1515"/>
+          <circle cx="528" cy="300" r="7" fill="#222" stroke="#000"/>
+        </g>
+
+        <!-- FUEL CELL -->
+        <g id="fc">
+          <rect x="570" y="54" width="460" height="278" rx="4" fill="url(#gPanel)" stroke="#b9c2ca"/>
+          <text x="588" y="80" class="lbl-panel" fill="#cf5530" style="fill:#c24d2b">O₂</text>
+          <text x="1010" y="80" text-anchor="end" class="lbl-panel" style="fill:#117f9f">H₂</text>
+          <text x="800" y="80" text-anchor="middle" class="lbl-panel" data-i18n="fcLbl">PEM yakıt hücresi (çift, seri)</text>
+          <g id="fcCells"></g>
+          <path d="M904,154 C930,170 930,190 904,206" fill="none" stroke="#222" stroke-width="3"/>
+          <circle cx="596" cy="300" r="7" fill="#d32f2f" stroke="#7a1515"/>
+          <circle cx="626" cy="300" r="7" fill="#222" stroke="#000"/>
+          <text x="611" y="324" text-anchor="middle" class="lbl-small">+   −</text>
+        </g>
+
+        <!-- PV PANEL -->
+        <g id="pv">
+          <rect x="250" y="372" width="222" height="318" rx="4" fill="url(#gPanel)" stroke="#b9c2ca"/>
+          <rect x="268" y="392" width="186" height="236" rx="3" fill="#0e1a30"/>
+          <g id="pvCells"></g>
+          <rect id="pvGlow" x="268" y="392" width="186" height="236" fill="url(#gPvGlow)" opacity="0" style="mix-blend-mode:screen"/>
+          <circle cx="361" cy="644" r="9" fill="#3d454d"/>
+          <text x="361" y="664" text-anchor="middle" class="lbl-small" data-i18n="pvLbl">Güneş paneli</text>
+          <circle cx="330" cy="676" r="7" fill="#d32f2f" stroke="#7a1515"/>
+          <circle cx="392" cy="676" r="7" fill="#222" stroke="#000"/>
+        </g>
+
+        <!-- PV MEASURING UNIT -->
+        <g id="pvMeter">
+          <rect x="482" y="372" width="148" height="268" rx="4" fill="url(#gPanel)" stroke="#b9c2ca"/>
+          <text x="556" y="392" text-anchor="middle" class="lbl-panel" data-i18n="pvMeter">PV ölçümü</text>
+          <text x="494" y="414" class="lbl-small" data-i18n="pvMV">Gerilim</text>
+          <rect x="494" y="420" width="104" height="50" rx="3" fill="#1b0706" stroke="#3a1210"/>
+          <text id="ledV2" x="592" y="459" text-anchor="end" class="led" style="font-size:36px" filter="url(#fGlow)">0.00</text>
+          <text x="604" y="454" class="led-u">V</text>
+          <text x="494" y="490" class="lbl-small" data-i18n="pvMA">Akım</text>
+          <rect x="494" y="496" width="104" height="50" rx="3" fill="#1b0706" stroke="#3a1210"/>
+          <text id="ledA2" x="592" y="535" text-anchor="end" class="led" style="font-size:36px" filter="url(#fGlow)">0.00</text>
+          <text x="604" y="530" class="led-u">A</text>
+          <text x="494" y="566" class="lbl-small" data-i18n="pvMP">Güç</text>
+          <rect x="494" y="572" width="104" height="40" rx="3" fill="#1b0706" stroke="#3a1210"/>
+          <text id="ledW2" x="592" y="603" text-anchor="end" class="led" style="font-size:28px;fill:#ffb02e" filter="url(#fGlow)">0.00</text>
+          <text x="604" y="600" class="led-u">W</text>
+          <rect x="494" y="620" width="104" height="8" rx="4" fill="#d3dae1"/>
+          <rect id="pvBar" x="494" y="620" width="0" height="8" rx="4" fill="#e6a300"/>
+        </g>
+
+        <!-- ELECTROLYZER -->
+        <g id="elz">
+          <rect x="640" y="372" width="262" height="326" rx="4" fill="url(#gPanel)" stroke="#b9c2ca"/>
+          <text x="771" y="390" text-anchor="middle" class="lbl-small" data-i18n="elzLbl">PEM elektrolizör · depo</text>
+          <!-- O2 cylinder -->
+          <rect x="684" y="402" width="52" height="226" rx="6" fill="url(#gO2gas)"/>
+          <path id="waterO2" clip-path="url(#clipO2)" fill="url(#gWater)" d=""/>
+          <!-- H2 cylinder -->
+          <rect x="804" y="402" width="52" height="226" rx="6" fill="url(#gH2gas)"/>
+          <path id="waterH2" clip-path="url(#clipH2)" fill="url(#gWater)" d=""/>
+          <g id="bubbles"></g>
+          <rect x="684" y="402" width="52" height="226" rx="6" fill="url(#gGlass)" stroke="#7d8994" stroke-width="2"/>
+          <rect x="804" y="402" width="52" height="226" rx="6" fill="url(#gGlass)" stroke="#7d8994" stroke-width="2"/>
+          <rect x="700" y="394" width="20" height="10" rx="2" fill="#9aa6b2"/>
+          <rect x="820" y="394" width="20" height="10" rx="2" fill="#9aa6b2"/>
+          <g id="ticks"></g>
+          <text x="710" y="645" text-anchor="middle" class="lbl-small" style="fill:#c24d2b;font-weight:600">O₂</text>
+          <text x="830" y="645" text-anchor="middle" class="lbl-small" style="fill:#117f9f;font-weight:600">H₂</text>
+          <!-- PEM stack -->
+          <rect x="676" y="650" width="190" height="34" rx="4" fill="url(#gStack)"/>
+          <rect x="766" y="650" width="10" height="34" fill="#d9a441"/>
+          <text x="771" y="696" text-anchor="middle" class="lbl-tick" data-i18n="pemLbl">PEM hücre</text>
+          <circle cx="656" cy="676" r="7" fill="#d32f2f" stroke="#7a1515"/>
+          <circle cx="886" cy="676" r="7" fill="#222" stroke="#000"/>
+          <text id="ovf" x="830" y="420" text-anchor="middle" class="lbl-tick" style="fill:#b7791f" opacity="0" data-i18n="full">DOLU</text>
+        </g>
+
+        <!-- STOPWATCH -->
+        <g id="swDev">
+          <circle cx="972" cy="470" r="44" fill="#2a323a" stroke="#9aa6b2" stroke-width="4"/>
+          <rect x="964" y="414" width="16" height="12" rx="2" fill="#9aa6b2"/>
+          <rect x="938" y="452" width="68" height="30" rx="3" fill="#c9d6c0"/>
+          <text id="swSvg" x="972" y="474" text-anchor="middle" style="font:400 18px var(--font-data);fill:#1d2a1a">00:00</text>
+          <text x="972" y="536" text-anchor="middle" class="lbl-small" data-i18n="swLbl">Kronometre</text>
+        </g>
+
+        <!-- H2 RATE DISPLAY -->
+        <g id="h2Meter">
+          <rect x="912" y="552" width="120" height="104" rx="4" fill="url(#gPanel)" stroke="#b9c2ca"/>
+          <text x="972" y="572" text-anchor="middle" class="lbl-panel" style="font-size:11px" data-i18n="h2Rate">H₂ üretim hızı</text>
+          <rect x="922" y="580" width="100" height="44" rx="3" fill="#03161c" stroke="#0d3a46"/>
+          <text id="ledH2" x="1014" y="614" text-anchor="end" class="led" style="font-size:32px;fill:#4fd6ff" filter="url(#fGlow)">0.00</text>
+          <text x="972" y="644" text-anchor="middle" class="lbl-tick" data-i18n="mlmin">mL/dk</text>
+        </g>
+
+        <!-- gas tubes -->
+        <g fill="none" stroke-linecap="round">
+          <path id="tH2" d="M830,394 C830,352 965,374 965,326 L965,120 L904,120" stroke="#cfe9f3" stroke-width="9" opacity=".9"/>
+          <path id="tH2b" d="M965,220 L904,220" stroke="#cfe9f3" stroke-width="9" opacity=".9"/>
+          <path id="tO2" d="M710,394 C710,354 650,374 650,326 L650,140 L686,140" stroke="#f6dcd0" stroke-width="9" opacity=".9"/>
+          <path id="tO2b" d="M650,240 L686,240" stroke="#f6dcd0" stroke-width="9" opacity=".9"/>
+          <path d="M830,394 C830,352 965,374 965,326 L965,120 L904,120 M965,220 L904,220" stroke="#8fb9c8" stroke-width="1.2"/>
+          <path d="M710,394 C710,354 650,374 650,326 L650,140 L686,140 M650,240 L686,240" stroke="#d9a996" stroke-width="1.2"/>
+        </g>
+        <g id="valve" class="valve" role="button" tabindex="0" aria-label="H2 vanası">
+          <rect x="953" y="288" width="24" height="24" rx="4" fill="#e7ecf1" stroke="#5a646e" stroke-width="2"/>
+          <rect id="valveHandle" x="940" y="297" width="50" height="6" rx="3" fill="#2f8a4a"/>
+          <text x="1000" y="285" text-anchor="middle" class="lbl-tick" data-i18n="valveLbl">vana</text>
+        </g>
+        <g id="tubeBalloons"></g>
+
+        <!-- wires -->
+        <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path id="wPVp" d="M330,676 C330,740 380,748 480,748 L600,748 C640,748 656,730 656,676" stroke="#d32f2f" stroke-width="4"/>
+          <path id="wPVn" d="M392,676 C392,722 420,770 500,770 L820,770 C870,770 886,730 886,676" stroke="#222" stroke-width="4"/>
+          <path id="wFCp" d="M596,300 C590,348 500,352 482,300" stroke="#d32f2f" stroke-width="3.5"/>
+          <path id="wFCn" d="M626,300 C620,374 540,372 528,300" stroke="#222" stroke-width="3.5"/>
+        </g>
+        <g id="electrons"></g>
+
+        <!-- light beam on top -->
+        <path id="beam" d="M146,556 L250,380 L472,380 L472,690 L250,690 L146,664 Z" fill="url(#gBeam)" opacity=".5" style="mix-blend-mode:screen" pointer-events="none"/>
+        <text id="irrTxt" x="190" y="760" text-anchor="middle" class="lbl-tick" style="fill:var(--muted)">0 W/m²</text>
+      </svg>
+    </div>
+
+    <aside class="console">
+      <div class="panel">
+        <h2 data-i18n="lightH">Işık şiddeti</h2>
+        <div class="light-ctl">
+          <button class="big dec" id="btnDec" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M5 12h-2M21 12h-2"/></svg>
+            <span data-i18n="dec">Azalt</span>
+          </button>
+          <button class="big inc" id="btnInc" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+            <span data-i18n="inc">Artır</span>
+          </button>
+        </div>
+        <div class="meter" id="meterBars" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="lvl-info"><span><span data-i18n="level">Kademe</span> <b id="lvlNum">4/8</b></span><span><b id="lvlG">0</b> W/m²</span><span><span data-i18n="group">Grup</span> <b id="lvlGrp">4</b></span></div>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="timeH">Zaman</h2>
+        <div class="seg" id="speedSeg">
+          <button type="button" data-speed="1" class="on">1×</button>
+          <button type="button" data-speed="10">10×</button>
+          <button type="button" data-speed="60">60×</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="btnPause" type="button" data-i18n="pause">Duraklat</button>
+          <button class="btn" id="btnReset" type="button" data-i18n="reset">Sıfırla</button>
+          <span class="sw-sub"><span data-i18n="simTime">Deney süresi</span> <b id="simT" style="color:var(--fg)">00:00</b></span>
+        </div>
+        <div class="switch">
+          <span><b data-i18n="valveH">H₂ vanası</b><br><span class="hint" data-i18n="valveHint">Kapatınca gaz yalnızca depoda birikir</span></span>
+          <button class="toggle" id="btnValve" type="button" aria-pressed="true" aria-label="H2"></button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 data-i18n="swH">Kronometre ölçümü</h2>
+        <div class="row" style="justify-content:space-between">
+          <span class="sw-display" id="swTime">00:00</span>
+          <span class="sw-sub">ΔH₂ <b id="swH2">0,0 mL</b></span>
+        </div>
+        <div class="row">
+          <button class="btn primary" id="btnSw" type="button" data-i18n="start">Başlat</button>
+          <button class="btn" id="btnSwReset" type="button" data-i18n="clear">Sıfırla</button>
+          <button class="btn" id="btnRec" type="button" data-i18n="record">Anlık kaydet</button>
+        </div>
+        <label class="chk"><input type="checkbox" id="swAuto" checked> <span data-i18n="auto20">20 dakikada otomatik durdur ve kaydet</span></label>
+      </div>
+    </aside>
+  </section>
+
+  <section class="chain" aria-label="Enerji zinciri">
+    <div class="node"><div class="stripe" style="background:var(--sun)"></div><span class="k" data-i18n="cLight">Işık</span><span class="v" id="cG">0 W/m²</span><span class="s" id="cGs">%0</span></div>
+    <div class="node"><div class="stripe" style="background:var(--accent)"></div><span class="k" data-i18n="cPV">Güneş paneli</span><span class="v" id="cPV">0,00 W</span><span class="s" id="cPVs">0,00 V · 0,00 A</span></div>
+    <div class="node"><div class="stripe" style="background:var(--h2)"></div><span class="k" data-i18n="cELZ">Elektrolizör</span><span class="v" id="cEL">0,0 mL/dk</span><span class="s" id="cELs">H₂ · ηF %0</span></div>
+    <div class="node"><div class="stripe" style="background:linear-gradient(90deg,var(--h2) 66%,var(--o2) 66%)"></div><span class="k" data-i18n="cTank">Gaz deposu</span><span class="v" id="cTank">0 mL</span><span class="s" id="cTanks">O₂ 0 mL</span></div>
+    <div class="node"><div class="stripe" style="background:var(--ok)"></div><span class="k" data-i18n="cFC">Yakıt hücresi</span><span class="v" id="cFC">0 mW</span><span class="s" id="cFCs">0,00 V · 0 mA</span></div>
+    <div class="node"><div class="stripe" style="background:#1f6fd1"></div><span class="k" data-i18n="cFan">Pervane</span><span class="v" id="cRpm">0 rpm</span><span class="s" id="cRpms">H₂ −0,0 mL/dk</span></div>
+  </section>
+
+  <section class="tabs">
+    <div class="tablist" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" aria-controls="tp1" id="tb1" data-i18n="tCharts">Grafikler</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tp2" id="tb2" data-i18n="tTable">Ölçüm tablosu</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tp3" id="tb3" data-i18n="tEff">Faraday ve verim</button>
+      <button class="tab" role="tab" aria-selected="false" aria-controls="tp4" id="tb4" data-i18n="tNotes">Model notları</button>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="tp1" aria-labelledby="tb1">
+      <div class="charts">
+        <div class="chart-box"><h3 data-i18n="ch0">PV gerilim, akım ve H₂ üretim hızı – zaman</h3><div class="cv"><canvas id="c0"></canvas></div><p data-i18n="ch0p">Işığı artırıp azalttıkça üç büyüklük birlikte basamaklanır. Sol eksen V ve A, sağ eksen mL/dk.</p></div>
+        <div class="chart-box"><h3 data-i18n="ch1">Depodaki gaz hacmi – zaman</h3><div class="cv"><canvas id="c1"></canvas></div><p data-i18n="ch1p">Yakıt hücresi tüketimi düşülmüş net hacim.</p></div>
+        <div class="chart-box"><h3 data-i18n="ch2">PV I–V eğrisi ve çalışma noktası</h3><div class="cv"><canvas id="c2"></canvas></div><p data-i18n="ch2p">Panel eğrisinin elektrolizör eğrisini kestiği nokta çalışma noktasıdır.</p></div>
+        <div class="chart-box"><h3 data-i18n="ch3">Akım – 20 dakikada H₂</h3><div class="cv"><canvas id="c3"></canvas></div><p data-i18n="ch3p">Laboratuvar ölçümleri, Faraday doğrusu ve sizin kronometre ölçümleriniz.</p></div>
+      </div>
+      <p class="hint" id="chartFail" hidden>Grafik kütüphanesi yüklenemedi. İnternet bağlantısını kontrol edin.</p>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="tp2" aria-labelledby="tb2" hidden>
+      <div class="row" style="margin-bottom:12px">
+        <button class="btn primary" id="btnCsv" type="button" data-i18n="csv">CSV indir</button>
+        <button class="btn" id="btnCopy" type="button" data-i18n="copy">Tabloyu kopyala</button>
+        <button class="btn" id="btnClearRec" type="button" data-i18n="clearRec">Tabloyu temizle</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th data-i18n="thType">Tür</th><th data-i18n="thT">Süre</th><th data-i18n="thLvl">Kademe</th><th>G (W/m²)</th>
+            <th>V<sub>PV</sub> (V)</th><th>I (A)</th><th>P<sub>PV</sub> (W)</th><th>ΔH₂ (mL)</th><th data-i18n="th20">20 dk H₂ (mL)</th>
+            <th>V<sub>YH</sub> (V)</th><th>I<sub>YH</sub> (mA)</th><th>rpm</th>
+          </tr></thead>
+          <tbody id="recBody"><tr><td class="empty" colspan="13" data-i18n="noRec">Henüz ölçüm yok. Kronometreyi başlatın veya “Anlık kaydet”e basın.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="tp3" aria-labelledby="tb3" hidden>
+      <div class="eff-grid" id="effGrid"></div>
+      <div class="two">
+        <div>
+          <h3 data-i18n="farTblH">Laboratuvar verisi ve Faraday yasası</h3>
+          <p class="hint" data-i18n="farTblP">V<sub>teorik</sub> = I·t/(2F)·V<sub>m</sub>, t = 1200 s, V<sub>m</sub> = 24,45 L/mol (25 °C, 1 atm)</p>
+          <div class="tbl-wrap" style="margin-top:8px"><table><thead><tr><th>I (A)</th><th data-i18n="thMeas">Ölçülen (mL)</th><th data-i18n="thTheo">Teorik (mL)</th><th>η<sub>F</sub></th></tr></thead><tbody id="farBody"></tbody></table></div>
+        </div>
+        <div class="notes">
+          <h3 data-i18n="howH">Nasıl okunur?</h3>
+          <p data-i18n="howP1">Faraday verimi, üretilen hidrojenin akımın teorik olarak üretebileceği miktara oranıdır. Enerji verimi ise hidrojenin üst ısıl değerinin (HHV, 285,8 kJ/mol) harcanan elektrik enerjisine oranıdır.</p>
+          <p data-i18n="howP2">Elektrolizör gerilimi 1,48 V'un (termonötr gerilim) üzerinde olduğu için fark ısıya dönüşür. Bu yüzden enerji verimi Faraday veriminden düşüktür.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabpanel" role="tabpanel" id="tp4" aria-labelledby="tb4" hidden>
+      <div class="notes" id="notes"></div>
+    </div>
+  </section>
+</main>
+<footer class="wrap"><span data-i18n="foot">Veriler: laboratuvar ölçümleri (Devre_Tasarimi_Veriler.xlsx) ve Heliocentris Dr FuelCell® Professional teknik veri sayfası.</span></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+(function () {
+"use strict";
+const NS = "http://www.w3.org/2000/svg";
+const $ = (s) => document.querySelector(s);
+const reduced = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- i18n ---------- */
+const I18N = {
+  tr: {
+    title: "Güneş-Hidrojen Dijital İkizi",
+    subtitle: "Dr FuelCell® Professional uzak deney seti · ışık → PV → elektrolizör → H₂ deposu → yakıt hücresi → pervane",
+    theme: "Tema", lampLbl: "PAR lamba", chFC: "YH · Motor", meterLbl: "Ölçüm ünitesi · 0–2 / 0–20 A·V",
+    motorLbl: "Motor", loadLbl: "Yük modülü", fcLbl: "PEM yakıt hücresi (çift, seri)", pvLbl: "Güneş paneli",
+    pvMeter: "PV ölçümü", pvMV: "Gerilim", pvMA: "Akım", pvMP: "Güç", h2Rate: "H₂ üretim hızı", mlmin: "mL/dk",
+    ch0: "PV gerilim, akım ve H₂ üretim hızı – zaman", ch0p: "Işığı artırıp azalttıkça üç büyüklük birlikte basamaklanır. Sol eksen V ve A, sağ eksen mL/dk.",
+    yVA: "V · A", yRate: "H₂ (mL/dk)", dsV: "PV gerilimi (V)", dsI: "PV akımı (A)", dsR: "H₂ üretim hızı (mL/dk)",
+    elzLbl: "PEM elektrolizör · depo", pemLbl: "PEM hücre", full: "DOLU", swLbl: "Kronometre", valveLbl: "vana",
+    lightH: "Işık şiddeti", dec: "Azalt", inc: "Artır", level: "Kademe", group: "Grup", off: "kapalı",
+    timeH: "Zaman", pause: "Duraklat", resume: "Devam", reset: "Sıfırla", simTime: "Deney süresi",
+    valveH: "H₂ vanası", valveHint: "Kapatınca gaz yalnızca depoda birikir",
+    swH: "Kronometre ölçümü", start: "Başlat", stop: "Durdur", clear: "Sıfırla", record: "Anlık kaydet",
+    auto20: "20 dakikada otomatik durdur ve kaydet",
+    cLight: "Işık", cPV: "Güneş paneli", cELZ: "Elektrolizör", cTank: "Gaz deposu", cFC: "Yakıt hücresi", cFan: "Pervane",
+    tCharts: "Grafikler", tTable: "Ölçüm tablosu", tEff: "Faraday ve verim", tNotes: "Model notları",
+    ch1: "Depodaki gaz hacmi – zaman", ch1p: "Yakıt hücresi tüketimi düşülmüş net hacim.",
+    ch2: "PV I–V eğrisi ve çalışma noktası", ch2p: "Panel eğrisinin elektrolizör eğrisini kestiği nokta çalışma noktasıdır.",
+    ch3: "Akım – 20 dakikada H₂", ch3p: "Laboratuvar ölçümleri, Faraday doğrusu ve sizin kronometre ölçümleriniz.",
+    csv: "CSV indir", copy: "Tabloyu kopyala", clearRec: "Tabloyu temizle",
+    thType: "Tür", thT: "Süre", thLvl: "Kademe", th20: "20 dk H₂ (mL)",
+    noRec: "Henüz ölçüm yok. Kronometreyi başlatın veya “Anlık kaydet”e basın.",
+    recSw: "Kronometre", recSnap: "Anlık",
+    farTblH: "Laboratuvar verisi ve Faraday yasası", thMeas: "Ölçülen (mL)", thTheo: "Teorik (mL)",
+    howH: "Nasıl okunur?",
+    howP1: "Faraday verimi, üretilen hidrojenin akımın teorik olarak üretebileceği miktara oranıdır. Enerji verimi ise hidrojenin üst ısıl değerinin (HHV, 285,8 kJ/mol) harcanan elektrik enerjisine oranıdır.",
+    howP2: "Elektrolizör gerilimi 1,48 V'un (termonötr gerilim) üzerinde olduğu için fark ısıya dönüşür. Bu yüzden enerji verimi Faraday veriminden düşüktür.",
+    foot: "Veriler: laboratuvar ölçümleri (Devre_Tasarimi_Veriler.xlsx) ve Heliocentris Dr FuelCell® Professional teknik veri sayfası.",
+    effF: "Faraday verimi (elektrolizör)", effE: "Enerji verimi (elektrolizör, HHV)", effPV: "PV panel verimi",
+    effFC: "Yakıt hücresi verimi (HHV)", effTot: "Güneşten pervaneye toplam",
+    xTime: "zaman (dk)", yVol: "hacim (mL)", xV: "gerilim (V)", yI: "akım (A)", xI: "akım (A)", yH2: "H₂ (mL / 20 dk)",
+    dsPV: "PV paneli", dsEL: "Elektrolizör", dsOP: "Çalışma noktası", dsLab: "Lab ölçümü", dsFar: "Faraday (teorik)", dsMine: "Sizin ölçümünüz",
+    tCopied: "Tablo panoya kopyalandı", tCopyFail: "Kopyalanamadı, tabloyu elle seçin", tSaved: "Ölçüm kaydedildi",
+    tCsv: "CSV hazırlandı. İndirme engellendiyse “Tabloyu kopyala”yı kullanın.", tAuto: "20 dakika tamamlandı, ölçüm kaydedildi",
+    tFull: "H₂ deposu doldu, fazla gaz dışarı atılıyor"
+  },
+  en: {
+    title: "Solar Hydrogen Digital Twin",
+    subtitle: "Dr FuelCell® Professional remote lab · light → PV → electrolyzer → H₂ storage → fuel cell → propeller",
+    theme: "Theme", lampLbl: "PAR lamp", chFC: "FC · Motor", meterLbl: "Measuring unit · 0–2 / 0–20 A·V",
+    motorLbl: "Motor", loadLbl: "Load module", fcLbl: "PEM fuel cell (double, series)", pvLbl: "Solar panel",
+    pvMeter: "PV meter", pvMV: "Voltage", pvMA: "Current", pvMP: "Power", h2Rate: "H₂ production rate", mlmin: "mL/min",
+    ch0: "PV voltage, current and H₂ production rate vs time", ch0p: "All three step together as you raise or lower the light. Left axis V and A, right axis mL/min.",
+    yVA: "V · A", yRate: "H₂ (mL/min)", dsV: "PV voltage (V)", dsI: "PV current (A)", dsR: "H₂ production rate (mL/min)",
+    elzLbl: "PEM electrolyzer · storage", pemLbl: "PEM cell", full: "FULL", swLbl: "Stopwatch", valveLbl: "valve",
+    lightH: "Light intensity", dec: "Decrease", inc: "Increase", level: "Level", group: "Group", off: "off",
+    timeH: "Time", pause: "Pause", resume: "Resume", reset: "Reset", simTime: "Run time",
+    valveH: "H₂ valve", valveHint: "When closed, gas only accumulates in storage",
+    swH: "Stopwatch measurement", start: "Start", stop: "Stop", clear: "Clear", record: "Record now",
+    auto20: "Stop and record automatically at 20 minutes",
+    cLight: "Light", cPV: "Solar panel", cELZ: "Electrolyzer", cTank: "Gas storage", cFC: "Fuel cell", cFan: "Propeller",
+    tCharts: "Charts", tTable: "Measurements", tEff: "Faraday & efficiency", tNotes: "Model notes",
+    ch1: "Stored gas volume vs time", ch1p: "Net volume after fuel cell consumption.",
+    ch2: "PV I–V curve and operating point", ch2p: "The operating point is where the panel curve meets the electrolyzer curve.",
+    ch3: "Current vs H₂ in 20 minutes", ch3p: "Lab measurements, Faraday line and your stopwatch runs.",
+    csv: "Download CSV", copy: "Copy table", clearRec: "Clear table",
+    thType: "Type", thT: "Duration", thLvl: "Level", th20: "H₂ per 20 min (mL)",
+    noRec: "No measurements yet. Start the stopwatch or press “Record now”.",
+    recSw: "Stopwatch", recSnap: "Snapshot",
+    farTblH: "Lab data and Faraday's law", thMeas: "Measured (mL)", thTheo: "Theoretical (mL)",
+    howH: "How to read this",
+    howP1: "Faraday efficiency is the hydrogen produced divided by what the current could produce in theory. Energy efficiency is the higher heating value of the hydrogen (HHV, 285.8 kJ/mol) divided by the electrical energy used.",
+    howP2: "The electrolyzer runs above the 1.48 V thermoneutral voltage, and the difference becomes heat. That is why energy efficiency is lower than Faraday efficiency.",
+    foot: "Data: lab measurements (Devre_Tasarimi_Veriler.xlsx) and the Heliocentris Dr FuelCell® Professional data sheet.",
+    effF: "Faraday efficiency (electrolyzer)", effE: "Energy efficiency (electrolyzer, HHV)", effPV: "PV panel efficiency",
+    effFC: "Fuel cell efficiency (HHV)", effTot: "Total, light to propeller",
+    xTime: "time (min)", yVol: "volume (mL)", xV: "voltage (V)", yI: "current (A)", xI: "current (A)", yH2: "H₂ (mL / 20 min)",
+    dsPV: "PV panel", dsEL: "Electrolyzer", dsOP: "Operating point", dsLab: "Lab data", dsFar: "Faraday (theory)", dsMine: "Your runs",
+    tCopied: "Table copied", tCopyFail: "Copy failed, select the table manually", tSaved: "Measurement recorded",
+    tCsv: "CSV ready. If the download is blocked, use “Copy table”.", tAuto: "20 minutes done, measurement recorded",
+    tFull: "H₂ storage full, excess gas is vented"
+  }
+};
+const NOTES = {
+  tr: `<h3>Model ve veri kaynakları</h3>
+<ul>
+<li><b>Elektrolizör</b> davranışı laboratuvar ölçümlerinizden gelir: 20 dakikada üretilen H₂ (0,5 A → 83 mL … 1,2 A → 179 mL) akıma göre doğrusal ara değerlemeyle hesaplanır. Gerilim, ölçümlerde görüldüğü gibi soğuk başlangıçta 2,7–2,9 V'tan ısındıkça yaklaşık 2,4 V'a iner (zaman sabiti ≈ 200 s).</li>
+<li><b>Işık kademeleri</b> sizin 8 deney grubunuzla eşleşir. Kademe <i>n</i>, ısınmış elektrolizörde grup <i>n</i>'nin akımını (0,5 + 0,1·(n−1) A) verecek şekilde kalibre edilmiştir.</li>
+<li><b>PV paneli</b> tek diyot modeliyle hesaplanır: I = I<sub>ph</sub> − I<sub>0</sub>(e<sup>V/(n·V<sub>t</sub>·N<sub>s</sub>)</sup> − 1). Üreticinin 4 hücreli paneli (V<sub>oc</sub> 2,3 V, I<sub>sc</sub> 1 A) ölçümlerdeki 2,4 V'luk elektrolizörü süremez. Bu nedenle model, düzeneğinizi temsil eden 6 hücreli eşdeğer bir panel kullanır (1000 W/m²'de V<sub>oc</sub> ≈ 3,4 V, I<sub>sc</sub> ≈ 1,3 A).</li>
+<li><b>Yakıt hücresi</b>: çift PEM hücre seri bağlı. Hücre gerilimi 0,98 V − 0,03·ln(1 + I/2 mA) − 0,25 Ω·I; seri bağlantıda üretici aralığı olan 0,8–1,8 V'ta kalır. H₂ tüketimi N<sub>s</sub>·I/(2F).</li>
+<li><b>Motor</b>: üretici sınırı 3 V / 130 mA. Yük eğrisi I = 20 mA + V/30 Ω; devir sayısı ≈ 1500 rpm/V (0,3 V üzerinde), rotor ataleti 0,8 s.</li>
+<li><b>Depo</b> ölçeği 0–300 mL'dir, çünkü ölçümlerinizde hacim 270 mL'ye kadar çıkıyor (Professional'ın kendi deposu 64 mL).</li>
+<li>Gaz hacmi 25 °C ve 1 atm için V<sub>m</sub> = 24,45 L/mol ile hesaplanır.</li>
+</ul>
+<h3>Dikkat çeken nokta</h3>
+<p>Üç grupta ölçülen hacim, Faraday yasasının izin verdiği üst sınırı aşıyor: <span class="pill warn">0,5 A · %109</span> <span class="pill warn">0,8 A · %112</span> <span class="pill warn">0,9 A · %103</span>. Bu fiziksel olarak mümkün değildir. Okuma hatası, sıcaklık/basınç farkı veya önceki gruptan depoda kalan gaz olabilir. Öğrencilerle tartışmak için iyi bir örnektir. 0,7 A ve 1,0–1,2 A grupları %95–99 aralığındadır <span class="pill ok">tutarlı</span>. Simülasyon, ölçülen değerleri olduğu gibi kullanır. Bu yüzden canlı η<sub>F</sub> göstergesi bu akımlarda %100'ün üzerine çıkar.</p>
+<h3>Kaynaklar</h3>
+<ul>
+<li><a href="https://www.heliocentrisacademia.com/dr-fuelcell-r-professional/p1478" target="_blank" rel="noopener">Heliocentris Academia: Dr FuelCell® Professional</a></li>
+<li><a href="https://www.kvant.sk/wp-content/uploads/2020/12/Professional.pdf" target="_blank" rel="noopener">Dr FuelCell® Professional teknik veri sayfası (PDF, Professional_EN_1101)</a></li>
+</ul>`,
+  en: `<h3>Model and data sources</h3>
+<ul>
+<li><b>Electrolyzer</b> behaviour comes from your lab measurements: H₂ produced in 20 minutes (0.5 A → 83 mL … 1.2 A → 179 mL) is linearly interpolated over current. Voltage starts at 2.7–2.9 V when cold and settles near 2.4 V as it warms (time constant ≈ 200 s), as in the measurements.</li>
+<li><b>Light levels</b> match your 8 measurement groups. Level <i>n</i> is calibrated to give group <i>n</i>'s current (0.5 + 0.1·(n−1) A) once the electrolyzer is warm.</li>
+<li><b>PV panel</b> uses the single-diode model: I = I<sub>ph</sub> − I<sub>0</sub>(e<sup>V/(n·V<sub>t</sub>·N<sub>s</sub>)</sup> − 1). The manufacturer's 4-cell panel (V<sub>oc</sub> 2.3 V, I<sub>sc</sub> 1 A) cannot drive the 2.4 V electrolyzer seen in the data, so the model uses an equivalent 6-cell panel (V<sub>oc</sub> ≈ 3.4 V, I<sub>sc</sub> ≈ 1.3 A at 1000 W/m²).</li>
+<li><b>Fuel cell</b>: double PEM cell in series. Cell voltage 0.98 V − 0.03·ln(1 + I/2 mA) − 0.25 Ω·I, staying inside the manufacturer's 0.8–1.8 V series range. H₂ use is N<sub>s</sub>·I/(2F).</li>
+<li><b>Motor</b>: manufacturer limit 3 V / 130 mA. Load curve I = 20 mA + V/30 Ω; speed ≈ 1500 rpm/V above 0.3 V, rotor lag 0.8 s.</li>
+<li><b>Storage</b> scale is 0–300 mL because your measurements reach 270 mL (the Professional's own storage is 64 mL).</li>
+<li>Gas volume uses V<sub>m</sub> = 24.45 L/mol (25 °C, 1 atm).</li>
+</ul>
+<h3>Worth discussing</h3>
+<p>In three groups the measured volume exceeds the limit set by Faraday's law: <span class="pill warn">0.5 A · 109%</span> <span class="pill warn">0.8 A · 112%</span> <span class="pill warn">0.9 A · 103%</span>. That is physically impossible. It may be a reading error, a temperature or pressure difference, or gas left in storage from the previous group, and it makes a good class discussion. The 0.7 A and 1.0–1.2 A groups fall between 95% and 99% <span class="pill ok">consistent</span>. The simulation uses the measured values as they are, so the live η<sub>F</sub> reading goes above 100% at these currents.</p>
+<h3>Sources</h3>
+<ul>
+<li><a href="https://www.heliocentrisacademia.com/dr-fuelcell-r-professional/p1478" target="_blank" rel="noopener">Heliocentris Academia: Dr FuelCell® Professional</a></li>
+<li><a href="https://www.kvant.sk/wp-content/uploads/2020/12/Professional.pdf" target="_blank" rel="noopener">Dr FuelCell® Professional data sheet (PDF, Professional_EN_1101)</a></li>
+</ul>`
+};
+let lang = "tr";
+try { lang = localStorage.getItem("h2twin-lang") || "tr"; } catch (e) {}
+const t = (k) => (I18N[lang] && I18N[lang][k]) || I18N.tr[k] || k;
+const num = (x, d) => { const s = (isFinite(x) ? x : 0).toFixed(d); return lang === "tr" ? s.replace(".", ",") : s; };
+const pct = (v, d) => lang === "tr" ? `%${num(v, d)}` : `${num(v, d)}%`;
+
+/* ---------- physics ---------- */
+const F = 96485, VM = 24450, HHV = 285830;      // C/mol, mL/mol (25 °C), J/mol
+const LAB20 = [[0.5, 83], [0.7, 101], [0.8, 136], [0.9, 141], [1.0, 150], [1.1, 165], [1.2, 179]];
+const LEVEL_I = [0, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2];
+const PV = { a: 1.3 * 0.025693 * 6, I0: 4.4e-8, IscRef: 1.30, area: 0.045 };
+const TANK = 300;
+
+function h2Rate(I) {                         // mL/min, from lab data
+  if (I <= 0) return 0;
+  const T = LAB20;
+  if (I <= T[0][0]) return T[0][1] / 20 * I / T[0][0];
+  if (I >= T[T.length - 1][0]) return T[T.length - 1][1] / 20 * I / T[T.length - 1][0];
+  for (let i = 0; i < T.length - 1; i++) {
+    if (I <= T[i + 1][0]) { const f = (I - T[i][0]) / (T[i + 1][0] - T[i][0]); return (T[i][1] + f * (T[i + 1][1] - T[i][1])) / 20; }
+  }
+  return 0;
+}
+const faradayRate = (I) => I * 60 / (2 * F) * VM;  // mL/min
+const vEl = (I, c) => 1.89 + 0.06 * Math.log(1 + I / 0.0005) + 0.05 * I + 0.4 * (1 - c);
+const pvI = (V, Iph) => Iph - PV.I0 * (Math.exp(V / PV.a) - 1);
+const IPH = LEVEL_I.map((I) => I === 0 ? 0 : I + PV.I0 * (Math.exp(vEl(I, 1) / PV.a) - 1));
+const levelG = (lv) => IPH[lv] / PV.IscRef * 1000;
+
+function solveOp(Iph, c) {
+  if (Iph <= 0) return 0;
+  let lo = 0, hi = Iph;
+  for (let k = 0; k < 44; k++) { const m = (lo + hi) / 2; if (pvI(vEl(m, c), Iph) - m > 0) lo = m; else hi = m; }
+  return (lo + hi) / 2;
+}
+const fcCellV = (I) => 0.98 - 0.03 * Math.log(1 + I / 0.002) - 0.25 * I;
+const motorI = (V) => V > 0.05 ? 0.02 * Math.min(1, V / 0.3) + V / 30 : 0;
+function solveFc(s) {
+  if (s < 0.02) return { I: 0, V: 0 };
+  let lo = 0, hi = 0.5;
+  for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; const V = Math.max(0, 2 * s * fcCellV(m)); if (motorI(V) - m > 0) lo = m; else hi = m; }
+  const I = (lo + hi) / 2; return { I, V: Math.max(0, 2 * s * fcCellV(I)) };
+}
+
+/* ---------- state ---------- */
+const S = {};
+function resetState() {
+  Object.assign(S, {
+    level: 4, t: 0, speed: S.speed || 1, paused: false, valve: true, ch: S.ch || "fc",
+    vH2: 40, vO2: 20, prod: 0, c: 0.55, fcS: 1, rpm: 0, rpmVis: 0, full: false,
+    I: 0, V: 0, rate: 0, fcI: 0, fcV: 0, cons: 0,
+    sw: { run: false, t: 0, h2: 0, level: 4 }, hist: [], lastHist: -1
+  });
+}
+resetState();
+let records = [];
+
+function step(dt) {
+  const Iph = IPH[S.level];
+  const I = solveOp(Iph, S.c);
+  S.I = I; S.V = I > 0 ? vEl(I, S.c) : (Iph > 0 ? 0 : 0);
+  S.Voc = Iph > 0 ? PV.a * Math.log(Iph / PV.I0 + 1) : 0;
+  S.c += I > 0.05 ? (1 - S.c) * (1 - Math.exp(-dt / 200)) : -S.c * (1 - Math.exp(-dt / 1800));
+  S.rate = h2Rate(I);
+  const prod = S.rate * dt / 60;
+  S.prod += prod;
+  if (S.sw.run) { S.sw.t += dt; S.sw.h2 += prod; }
+
+  const avail = S.valve && S.vH2 > 1;
+  S.fcS += ((avail ? 1 : 0) - S.fcS) * (1 - Math.exp(-dt / (avail ? 2.5 : 7)));
+  const fc = solveFc(S.fcS);
+  S.fcI = fc.I; S.fcV = fc.V;
+  S.cons = S.valve ? 2 * S.fcI * 60 / (2 * F) * VM : 0;
+
+  const before = S.vH2;
+  S.vH2 = S.vH2 + prod - S.cons * dt / 60;
+  S.full = S.vH2 >= TANK;
+  if (S.full && before < TANK) toast(t("tFull"));
+  S.vH2 = Math.min(TANK, Math.max(0, S.vH2));
+  S.vO2 = Math.min(TANK, Math.max(0, S.vO2 + prod / 2 - S.cons / 2 * dt / 60));
+
+  const target = S.fcV > 0.3 ? (S.fcV - 0.3) * 1500 : 0;
+  S.rpm += (target - S.rpm) * (1 - Math.exp(-dt / 0.8));
+  S.t += dt;
+
+  const hk = Math.floor(S.t / 2);
+  if (hk !== S.lastHist) { S.lastHist = hk; S.hist.push({ x: S.t / 60, h: S.vH2, o: S.vO2, v: S.V, i: S.I, r: S.rate }); if (S.hist.length > 5400) S.hist.splice(0, S.hist.length - 5400); }
+
+  if (S.sw.run && $("#swAuto").checked && S.sw.t >= 1200) { S.sw.t = 1200; stopSw(true); }
+}
+
+/* ---------- SVG building ---------- */
+const svg = $("#scene");
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+
+(function buildPv() {
+  const g = $("#pvCells");
+  const cw = 86, ch = 72, x0 = 274, y0 = 398;
+  for (let r = 0; r < 3; r++) for (let c = 0; c < 2; c++) {
+    const x = x0 + c * (cw + 6), y = y0 + r * (ch + 6);
+    el("rect", { x, y, width: cw, height: ch, rx: 2, fill: "url(#gCell)" }, g);
+    for (let k = 1; k < 4; k++) el("line", { x1: x + k * cw / 4, y1: y, x2: x + k * cw / 4, y2: y + ch, stroke: "#4d6493", "stroke-width": .6 }, g);
+    el("line", { x1: x, y1: y + ch / 2, x2: x + cw, y2: y + ch / 2, stroke: "#8ea0c4", "stroke-width": 1 }, g);
+  }
+})();
+(function buildFc() {
+  const g = $("#fcCells");
+  [105, 205].forEach((y0) => {
+    el("rect", { x: 682, y: y0 - 6, width: 220, height: 82, rx: 4, fill: "#eef3f6", stroke: "#9aa6b2" }, g);
+    el("rect", { x: 690, y: y0, width: 95, height: 70, fill: "#fbe1d6", stroke: "#d9a996", class: "fcO" }, g);
+    el("rect", { x: 797, y: y0, width: 95, height: 70, fill: "#d6eff8", stroke: "#8fb9c8", class: "fcH" }, g);
+    el("rect", { x: 785, y: y0 - 4, width: 12, height: 78, fill: "#d9a441" }, g);
+    el("rect", { x: 778, y: y0 - 4, width: 6, height: 78, fill: "#40474e" }, g);
+    el("rect", { x: 798, y: y0 - 4, width: 6, height: 78, fill: "#40474e" }, g);
+    [[688, y0 - 2], [894, y0 - 2], [688, y0 + 72], [894, y0 + 72]].forEach(([x, y]) => el("circle", { cx: x, cy: y, r: 3, fill: "#9aa6b2" }, g));
+  });
+  el("text", { x: 791, y: 300, "text-anchor": "middle", class: "lbl-tick" }, g).textContent = "H⁺ →  membran  ← H₂";
+})();
+(function buildTicks() {
+  const g = $("#ticks");
+  for (let v = 0; v <= 300; v += 25) {
+    const y = 410 + v / TANK * 210, major = v % 50 === 0;
+    el("line", { x1: 856, y1: y, x2: 856 - (major ? 12 : 6), y2: y, stroke: "#31404d", "stroke-width": 1 }, g);
+    el("line", { x1: 684, y1: y, x2: 684 + (major ? 12 : 6), y2: y, stroke: "#31404d", "stroke-width": 1 }, g);
+    if (major) {
+      el("text", { x: 862, y: y + 3, class: "lbl-tick" }, g).textContent = v;
+      el("text", { x: 679, y: y + 3, "text-anchor": "end", class: "lbl-tick" }, g).textContent = v;
+    }
+  }
+  el("text", { x: 862, y: 640, class: "lbl-tick" }, g).textContent = "mL";
+})();
+
+/* particle pools */
+function pool(parent) { const items = []; return { get(i, make) { while (items.length <= i) items.push(make(parent)); return items[i]; }, hideFrom(n) { for (let i = n; i < items.length; i++) items[i].setAttribute("visibility", "hidden"); } }; }
+const bubblePool = pool($("#bubbles")), balloonPool = pool($("#tubeBalloons")), ePool = pool($("#electrons")), ionPool = pool($("#fcCells"));
+const bubbles = [], balloons = [], ions = [], drops = [];
+const paths = {};
+["wPVp", "wPVn", "wFCp", "wFCn", "tH2", "tO2"].forEach((id) => { const p = document.getElementById(id); paths[id] = { p, L: p.getTotalLength() }; });
+const ePhase = { wPVp: 0, wPVn: 0, wFCp: 0, wFCn: 0 };
+let propAngle = 0, spawnAcc = { h: 0, o: 0, tube: 0, ion: 0, drop: 0, ovf: 0 };
+
+const levelY = (v) => 410 + v / TANK * 210;
+function waterPath(x, w, yTop, time, amp) {
+  let d = `M${x},640 L${x},${yTop}`;
+  for (let i = 0; i <= 10; i++) { const xx = x + i * w / 10; d += ` L${xx.toFixed(1)},${(yTop + Math.sin(time * 3 + i * 0.9) * amp).toFixed(2)}`; }
+  return d + ` L${x + w},640 Z`;
+}
+
+function animate(rdt, now) {
+  const time = now / 1000;
+  const sp = S.paused ? 0 : 1;
+  const visBoost = S.paused ? 0 : 1 + Math.log10(S.speed) * 0.6;
+  const density = reduced ? 0.35 : 1;
+
+  // lamp + PV
+  const G = levelG(S.level), g = G / 1000;
+  $("#beam").setAttribute("opacity", (g * 0.75).toFixed(3));
+  $("#bulb").setAttribute("opacity", (0.25 + g * 0.75).toFixed(3));
+  $("#bulb").setAttribute("fill", g > 0 ? "#fff4bf" : "#c9ccce");
+  $("#bulbGlow").setAttribute("opacity", (g * 0.95).toFixed(3));
+  $("#pvGlow").setAttribute("opacity", (g * 0.55 + (g > 0 ? Math.sin(time * 2) * 0.03 : 0)).toFixed(3));
+  $("#irrTxt").textContent = `${Math.round(G)} W/m²`;
+
+  // water
+  const yH = levelY(S.vH2), yO = levelY(S.vO2), amp = 0.8 + S.rate * 0.12;
+  $("#waterH2").setAttribute("d", waterPath(804, 52, yH, time, amp));
+  $("#waterO2").setAttribute("d", waterPath(684, 52, yO, time + 1, amp * 0.7));
+  $("#ovf").setAttribute("opacity", S.full ? (0.6 + 0.4 * Math.sin(time * 6)).toFixed(2) : 0);
+
+  // bubbles
+  spawnAcc.h += rdt * S.rate * 2.6 * visBoost * density;
+  spawnAcc.o += rdt * S.rate * 1.3 * visBoost * density;
+  while (spawnAcc.h >= 1) { spawnAcc.h--; bubbles.push({ x: 830 + (Math.random() - .5) * 42, y: 630, r: 1.4 + Math.random() * 2.2, v: 45 + Math.random() * 55, s: "h", w: Math.random() * 6.3 }); }
+  while (spawnAcc.o >= 1) { spawnAcc.o--; bubbles.push({ x: 710 + (Math.random() - .5) * 42, y: 630, r: 1.8 + Math.random() * 2.8, v: 40 + Math.random() * 45, s: "o", w: Math.random() * 6.3 }); }
+  if (S.full) { spawnAcc.ovf += rdt * 6 * sp; while (spawnAcc.ovf >= 1) { spawnAcc.ovf--; bubbles.push({ x: 860 + Math.random() * 8, y: 630, r: 2 + Math.random() * 3, v: 60, s: "x", w: Math.random() * 6.3 }); } }
+  let n = 0;
+  for (let i = bubbles.length - 1; i >= 0; i--) {
+    const b = bubbles[i];
+    b.y -= b.v * rdt * (sp || 0.0);
+    b.v *= 1 + rdt * 0.4 * sp;
+    const top = b.s === "h" ? yH : b.s === "o" ? yO : 560;
+    if (b.y < top + b.r || bubbles.length - i > 220) { bubbles.splice(i, 1); continue; }
+  }
+  for (const b of bubbles) {
+    const c = bubblePool.get(n++, (p) => el("circle", { "stroke-width": .8 }, p));
+    const xx = b.x + Math.sin(time * 7 + b.w) * 1.2;
+    c.setAttribute("cx", xx.toFixed(1)); c.setAttribute("cy", b.y.toFixed(1)); c.setAttribute("r", b.r.toFixed(1));
+    c.setAttribute("fill", b.s === "o" ? "rgba(255,236,226,.85)" : "rgba(240,252,255,.85)");
+    c.setAttribute("stroke", b.s === "o" ? "#d9805c" : "#3fa6c9");
+    c.setAttribute("visibility", "visible");
+  }
+  bubblePool.hideFrom(n);
+
+  // H2 / O2 balloons along tubes toward fuel cell
+  spawnAcc.tube += rdt * S.cons * 1.4 * visBoost * density;
+  while (spawnAcc.tube >= 1) { spawnAcc.tube--; balloons.push({ p: 0, k: "tH2", r: 3.2 + Math.random() }); if (Math.random() < .5) balloons.push({ p: 0, k: "tO2", r: 3.4 + Math.random() }); }
+  const tubeSpeed = 0.12 + S.cons * 0.12;
+  n = 0;
+  for (let i = balloons.length - 1; i >= 0; i--) { balloons[i].p += rdt * tubeSpeed * sp; if (balloons[i].p >= 1 || balloons.length > 80) balloons.splice(i, 1); }
+  for (const b of balloons) {
+    const P = paths[b.k], pt = P.p.getPointAtLength(b.p * P.L);
+    const c = balloonPool.get(n++, (p) => el("circle", { "stroke-width": 1.2 }, p));
+    const pulse = 1 + Math.sin(time * 8 + b.p * 20) * 0.12;
+    c.setAttribute("cx", pt.x.toFixed(1)); c.setAttribute("cy", pt.y.toFixed(1)); c.setAttribute("r", (b.r * pulse).toFixed(2));
+    c.setAttribute("fill", b.k === "tH2" ? "#7fd3ee" : "#f4a988"); c.setAttribute("stroke", b.k === "tH2" ? "#127a9a" : "#b5512f");
+    c.setAttribute("visibility", "visible");
+  }
+  balloonPool.hideFrom(n);
+
+  // electrons (conventional current) on wires
+  n = 0;
+  const wires = [["wPVp", S.I * 140, 1], ["wPVn", S.I * 140, -1], ["wFCp", S.fcI * 1600, 1], ["wFCn", S.fcI * 1600, -1]];
+  for (const [id, v, dir] of wires) {
+    const P = paths[id];
+    ePhase[id] = (ePhase[id] + dir * v * rdt * sp + P.L) % P.L;
+    if (v < 0.5) continue;
+    const count = Math.max(4, Math.round(P.L / 34));
+    for (let k = 0; k < count; k++) {
+      const pt = P.p.getPointAtLength((ePhase[id] + k * P.L / count) % P.L);
+      const c = ePool.get(n++, (p) => el("circle", { r: 2.6, fill: "#ffd34d", stroke: "#8a6400", "stroke-width": .6 }, p));
+      c.setAttribute("cx", pt.x.toFixed(1)); c.setAttribute("cy", pt.y.toFixed(1)); c.setAttribute("visibility", "visible");
+    }
+  }
+  ePool.hideFrom(n);
+
+  // fuel cell: H+ ions crossing membrane, water forming on O2 side
+  const fcAct = S.fcI / 0.08;
+  spawnAcc.ion += rdt * fcAct * 14 * density * sp;
+  while (spawnAcc.ion >= 1) { spawnAcc.ion--; ions.push({ x: 880, y: (Math.random() < .5 ? 105 : 205) + 8 + Math.random() * 54, k: "i" }); }
+  spawnAcc.drop += rdt * fcAct * 1.6 * density * sp;
+  while (spawnAcc.drop >= 1) { spawnAcc.drop--; ions.push({ x: 700 + Math.random() * 70, y: (Math.random() < .5 ? 105 : 205) + 6, k: "d", y0: 0 }); }
+  n = 0;
+  for (let i = ions.length - 1; i >= 0; i--) {
+    const o = ions[i];
+    if (o.k === "i") { o.x -= rdt * 70 * sp; if (o.x < 760) ions.splice(i, 1); }
+    else { o.y0 += rdt * 22 * sp; if (o.y0 > 62) ions.splice(i, 1); }
+    if (ions.length > 120) ions.splice(0, 1);
+  }
+  for (const o of ions) {
+    const c = ionPool.get(n++, (p) => el("circle", {}, p));
+    if (o.k === "i") { c.setAttribute("cx", o.x.toFixed(1)); c.setAttribute("cy", o.y.toFixed(1)); c.setAttribute("r", 2.2); c.setAttribute("fill", "#e0457b"); }
+    else { c.setAttribute("cx", o.x.toFixed(1)); c.setAttribute("cy", (o.y + o.y0).toFixed(1)); c.setAttribute("r", 2.8); c.setAttribute("fill", "#4ea6dc"); }
+    c.setAttribute("visibility", "visible");
+  }
+  ionPool.hideFrom(n);
+  document.querySelectorAll(".fcH").forEach((r) => r.setAttribute("fill-opacity", (0.35 + 0.65 * S.fcS).toFixed(2)));
+
+  // propeller
+  const vis = Math.min(S.rpm, 2600);
+  propAngle = (propAngle + vis / 60 * 360 * 0.11 * rdt * (S.paused ? 0 : 1)) % 360;
+  $("#prop").setAttribute("transform", `rotate(${propAngle.toFixed(1)})`);
+  const blur = Math.min(1, S.rpm / 2200);
+  $("#propBlur").setAttribute("opacity", (blur * 0.45).toFixed(2));
+  $("#prop").setAttribute("opacity", (1 - blur * 0.45).toFixed(2));
+  $("#rpmTxt").textContent = `${Math.round(S.rpm)} rpm`;
+}
+
+/* ---------- UI ---------- */
+const fmtT = (s) => { s = Math.floor(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" : "") + String(m).padStart(2, "0") + ":" + String(x).padStart(2, "0"); };
+function updateUi() {
+  const G = levelG(S.level);
+  $("#lvlNum").textContent = S.level === 0 ? t("off") : `${S.level}/8`;
+  $("#lvlG").textContent = Math.round(G);
+  $("#lvlGrp").textContent = S.level === 0 ? "–" : `${S.level} (${num(LEVEL_I[S.level], 1)} A)`;
+  document.querySelectorAll("#meterBars span").forEach((s, i) => s.classList.toggle("on", i < S.level));
+  $("#btnDec").disabled = S.level === 0; $("#btnInc").disabled = S.level === 8;
+  $("#simT").textContent = fmtT(S.t);
+  $("#swTime").textContent = fmtT(S.sw.t); $("#swSvg").textContent = fmtT(S.sw.t);
+  $("#swH2").textContent = `${num(S.sw.h2, 1)} mL`;
+
+  const Ppv = S.V * S.I, Pfc = S.fcV * S.fcI;
+  const etaF = S.I > 0 ? S.rate / faradayRate(S.I) : 0;
+  $("#cG").textContent = `${Math.round(G)} W/m²`;
+  $("#cGs").textContent = `${pct(G / 10, 0)} · ${S.level === 0 ? t("off") : t("level") + " " + S.level}`;
+  $("#cPV").textContent = `${num(Ppv, 2)} W`;
+  $("#cPVs").textContent = `${num(S.V, 2)} V · ${num(S.I, 2)} A`;
+  $("#cEL").textContent = `${num(S.rate, 2)} mL/dk`.replace("mL/dk", lang === "tr" ? "mL/dk" : "mL/min");
+  $("#cELs").textContent = `H₂ · ηF ${pct(etaF * 100, 0)}`;
+  $("#cTank").textContent = `${num(S.vH2, 1)} mL`;
+  $("#cTanks").textContent = `H₂ · O₂ ${num(S.vO2, 1)} mL`;
+  $("#cFC").textContent = `${Math.round(Pfc * 1000)} mW`;
+  $("#cFCs").textContent = `${num(S.fcV, 2)} V · ${Math.round(S.fcI * 1000)} mA`;
+  $("#cRpm").textContent = `${Math.round(S.rpm)} rpm`;
+  $("#cRpms").textContent = `H₂ −${num(S.cons, 2)} ${lang === "tr" ? "mL/dk" : "mL/min"}`;
+
+  const v = S.ch === "pv" ? S.V : S.fcV, a = S.ch === "pv" ? S.I : S.fcI;
+  $("#ledV").textContent = v.toFixed(2); $("#ledA").textContent = a.toFixed(S.ch === "pv" ? 2 : 3);
+  $("#ledV2").textContent = S.V.toFixed(2); $("#ledA2").textContent = S.I.toFixed(2); $("#ledW2").textContent = Ppv.toFixed(2);
+  $("#pvBar").setAttribute("width", (104 * Math.min(1, Ppv / 3)).toFixed(1));
+  $("#ledH2").textContent = S.rate.toFixed(2);
+
+  const btnSw = $("#btnSw"); btnSw.textContent = S.sw.run ? t("stop") : t("start");
+  $("#btnPause").textContent = S.paused ? t("resume") : t("pause");
+  const vb = $("#btnValve"); vb.setAttribute("aria-pressed", S.valve);
+  $("#valveHandle").setAttribute("transform", S.valve ? "" : "rotate(90 965 300)");
+  $("#valveHandle").setAttribute("fill", S.valve ? "#2f8a4a" : "#c0392b");
+  updateEff(Ppv, Pfc, etaF, G);
+}
+
+function updateEff(Ppv, Pfc, etaF, G) {
+  const Pin = G * PV.area;
+  const pH2 = S.rate / 60 / VM * HHV;
+  const fcIn = S.cons / 60 / VM * HHV;
+  const rows = [
+    ["effF", etaF, `${num(S.rate, 2)} / ${num(faradayRate(S.I), 2)} mL/${lang === "tr" ? "dk" : "min"}`],
+    ["effE", Ppv > 0 ? pH2 / Ppv : 0, `${num(pH2, 2)} W / ${num(Ppv, 2)} W`],
+    ["effPV", Pin > 0 ? Ppv / Pin : 0, `${num(Ppv, 2)} W / (${Math.round(G)} W/m² × ${num(PV.area, 3)} m²)`],
+    ["effFC", fcIn > 0 ? Pfc / fcIn : 0, `${num(Pfc * 1000, 0)} mW / ${num(fcIn * 1000, 0)} mW`],
+    ["effTot", Pin > 0 ? Pfc / Pin : 0, `${num(Pfc * 1000, 0)} mW / ${num(Pin, 1)} W`]
+  ];
+  const grid = $("#effGrid");
+  if (!grid.children.length) rows.forEach(() => { const d = document.createElement("div"); d.className = "eff"; d.innerHTML = '<span class="lbl"></span><span class="num"></span><div class="bar"><i></i></div><span class="f"></span>'; grid.appendChild(d); });
+  rows.forEach(([k, v, f], i) => {
+    const d = grid.children[i];
+    d.querySelector(".lbl").textContent = t(k);
+    d.querySelector(".num").textContent = pct(v * 100, v < 0.1 ? 2 : 1);
+    d.querySelector("i").style.width = `${Math.min(100, v * 100)}%`;
+    d.querySelector(".f").textContent = f;
+  });
+}
+
+function buildFarTable() {
+  $("#farBody").innerHTML = LAB20.map(([I, m]) => {
+    const th = faradayRate(I) * 20, e = m / th;
+    return `<tr><td>${num(I, 1)}</td><td>${m}</td><td>${num(th, 1)}</td><td>${pct(e * 100, 1)} ${e > 1 ? '<span class="pill warn">&gt;100</span>' : ""}</td></tr>`;
+  }).join("");
+}
+
+function toast(msg) { const el2 = $("#toast"); el2.textContent = msg; el2.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => el2.classList.remove("show"), 2600); }
+
+/* records */
+function addRecord(kind) {
+  const r = { kind, t: kind === "sw" ? S.sw.t : S.t, level: kind === "sw" ? S.sw.level : S.level, G: levelG(S.level),
+    V: S.V, I: S.I, P: S.V * S.I, dH2: kind === "sw" ? S.sw.h2 : null,
+    h20: kind === "sw" && S.sw.t > 0 ? S.sw.h2 * 1200 / S.sw.t : S.rate * 20, fcV: S.fcV, fcI: S.fcI * 1000, rpm: S.rpm, Iavg: kind === "sw" && S.sw.t > 0 ? S.sw.q / S.sw.t : S.I };
+  records.push(r); renderRecords(); updateC3();
+}
+function renderRecords() {
+  const body = $("#recBody");
+  if (!records.length) { body.innerHTML = `<tr><td class="empty" colspan="13">${t("noRec")}</td></tr>`; return; }
+  body.innerHTML = records.map((r, i) => `<tr><td>${i + 1}</td><td>${r.kind === "sw" ? t("recSw") : t("recSnap")}</td><td>${fmtT(r.t)}</td><td>${r.level}</td><td>${Math.round(r.G)}</td><td>${num(r.V, 2)}</td><td>${num(r.I, 3)}</td><td>${num(r.P, 2)}</td><td>${r.dH2 == null ? "–" : num(r.dH2, 1)}</td><td>${num(r.h20, 1)}</td><td>${num(r.fcV, 2)}</td><td>${num(r.fcI, 0)}</td><td>${Math.round(r.rpm)}</td></tr>`).join("");
+}
+function csvText(sep) {
+  const head = ["#", "type", "duration_s", "level", "G_Wm2", "V_pv", "I_A", "P_pv_W", "dH2_mL", "H2_20min_mL", "V_fc", "I_fc_mA", "rpm"];
+  const rows = records.map((r, i) => [i + 1, r.kind, Math.round(r.t), r.level, Math.round(r.G), r.V.toFixed(3), r.I.toFixed(3), r.P.toFixed(3), r.dH2 == null ? "" : r.dH2.toFixed(1), r.h20.toFixed(1), r.fcV.toFixed(3), r.fcI.toFixed(1), Math.round(r.rpm)]);
+  return [head, ...rows].map((r) => r.join(sep)).join("\n");
+}
+
+/* stopwatch */
+function startSw() { if (S.sw.t >= 1200 && $("#swAuto").checked) resetSw(); S.sw.run = true; S.sw.level = S.level; }
+function stopSw(auto) { S.sw.run = false; if (S.sw.t >= 10) { addRecord("sw"); toast(auto ? t("tAuto") : t("tSaved")); } }
+function resetSw() { S.sw = { run: false, t: 0, h2: 0, q: 0, level: S.level }; }
+resetSw();
+
+/* ---------- charts ---------- */
+let c0, c1, c2, c3;
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function chartBase(xl, yl) {
+  const fg = css("--muted"), grid = css("--line");
+  return { responsive: true, maintainAspectRatio: false, animation: false, parsing: false,
+    plugins: { legend: { labels: { color: fg, boxWidth: 12, font: { family: "Barlow" } } }, tooltip: { intersect: false, mode: "nearest" } },
+    scales: { x: { type: "linear", title: { display: true, text: xl, color: fg }, ticks: { color: fg }, grid: { color: grid } },
+              y: { type: "linear", title: { display: true, text: yl, color: fg }, ticks: { color: fg }, grid: { color: grid }, beginAtZero: true } } };
+}
+function makeCharts() {
+  if (typeof Chart === "undefined") { $("#chartFail").hidden = false; return; }
+  [c0, c1, c2, c3].forEach((c) => c && c.destroy());
+  const h2 = css("--h2"), o2 = css("--o2"), acc = css("--accent"), sun = css("--sun"), fg = css("--fg");
+  const o0 = chartBase(t("xTime"), t("yVA"));
+  o0.scales.y.max = 3.5;
+  o0.scales.y2 = { type: "linear", position: "right", min: 0, max: 10, title: { display: true, text: t("yRate"), color: css("--muted") }, ticks: { color: css("--muted") }, grid: { drawOnChartArea: false } };
+  c0 = new Chart($("#c0"), { type: "line", data: { datasets: [
+    { label: t("dsV"), data: [], borderColor: acc, pointRadius: 0, borderWidth: 2, stepped: false, yAxisID: "y" },
+    { label: t("dsI"), data: [], borderColor: sun, pointRadius: 0, borderWidth: 2, yAxisID: "y" },
+    { label: t("dsR"), data: [], borderColor: h2, backgroundColor: h2 + "22", fill: true, pointRadius: 0, borderWidth: 2.5, yAxisID: "y2" } ] }, options: o0 });
+  c1 = new Chart($("#c1"), { type: "line", data: { datasets: [
+    { label: "H₂", data: [], borderColor: h2, backgroundColor: h2 + "33", fill: true, pointRadius: 0, borderWidth: 2 },
+    { label: "O₂", data: [], borderColor: o2, pointRadius: 0, borderWidth: 2 } ] }, options: chartBase(t("xTime"), t("yVol")) });
+  c1.options.scales.y.max = TANK;
+  c2 = new Chart($("#c2"), { type: "scatter", data: { datasets: [
+    { label: t("dsPV"), data: [], showLine: true, borderColor: sun, pointRadius: 0, borderWidth: 2.5 },
+    { label: t("dsEL"), data: [], showLine: true, borderColor: h2, pointRadius: 0, borderWidth: 2, borderDash: [5, 4] },
+    { label: t("dsOP"), data: [], pointRadius: 7, pointBackgroundColor: acc, pointBorderColor: fg, pointBorderWidth: 1.5 } ] }, options: chartBase(t("xV"), t("yI")) });
+  c2.options.scales.x.min = 0; c2.options.scales.x.max = 3.6; c2.options.scales.y.max = 1.4;
+  c3 = new Chart($("#c3"), { type: "scatter", data: { datasets: [
+    { label: t("dsFar"), data: [{ x: 0, y: 0 }, { x: 1.3, y: faradayRate(1.3) * 20 }], showLine: true, borderColor: css("--muted"), borderDash: [6, 4], pointRadius: 0, borderWidth: 1.5 },
+    { label: t("dsLab"), data: LAB20.map(([x, y]) => ({ x, y })), pointRadius: 6, pointBackgroundColor: h2, pointBorderColor: fg, pointBorderWidth: 1 },
+    { label: t("dsMine"), data: [], pointRadius: 7, pointStyle: "rectRot", pointBackgroundColor: o2, pointBorderColor: fg, pointBorderWidth: 1 } ] }, options: chartBase(t("xI"), t("yH2")) });
+  c3.options.scales.x.min = 0; c3.options.scales.x.max = 1.3; c3.options.scales.y.max = 220;
+  updateCharts(); updateC3();
+}
+function updateC3() { if (!c3) return; c3.data.datasets[2].data = records.filter((r) => r.kind === "sw").map((r) => ({ x: r.Iavg, y: r.h20 })); c3.update("none"); }
+function updateCharts() {
+  if (!c1) return;
+  c0.data.datasets[0].data = S.hist.map((p) => ({ x: p.x, y: p.v }));
+  c0.data.datasets[1].data = S.hist.map((p) => ({ x: p.x, y: p.i }));
+  c0.data.datasets[2].data = S.hist.map((p) => ({ x: p.x, y: p.r }));
+  c0.update("none");
+  c1.data.datasets[0].data = S.hist.map((p) => ({ x: p.x, y: p.h }));
+  c1.data.datasets[1].data = S.hist.map((p) => ({ x: p.x, y: p.o }));
+  c1.update("none");
+  const Iph = IPH[S.level], pv = [], ez = [];
+  if (Iph > 0) { const Voc = PV.a * Math.log(Iph / PV.I0 + 1); for (let i = 0; i <= 60; i++) { const V = Voc * i / 60; pv.push({ x: V, y: Math.max(0, pvI(V, Iph)) }); } }
+  for (let i = 0; i <= 40; i++) { const I = 1.4 * i / 40; ez.push({ x: vEl(I, S.c), y: I }); }
+  c2.data.datasets[0].data = pv; c2.data.datasets[1].data = ez;
+  c2.data.datasets[2].data = S.I > 0 ? [{ x: S.V, y: S.I }] : [];
+  c2.update("none");
+}
+
+/* ---------- i18n apply ---------- */
+function applyLang() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach((e) => { const k = e.getAttribute("data-i18n"); if (I18N[lang][k]) e.textContent = I18N[lang][k]; });
+  document.title = t("title");
+  $("#btnLang").textContent = lang === "tr" ? "EN" : "TR";
+  $("#notes").innerHTML = NOTES[lang];
+  buildFarTable(); renderRecords(); makeCharts(); updateUi();
+  try { localStorage.setItem("h2twin-lang", lang); } catch (e) {}
+}
+
+/* ---------- events ---------- */
+function setLevel(l) { S.level = Math.max(0, Math.min(8, l)); if (S.sw.run) S.sw.level = S.level; updateUi(); updateCharts(); }
+$("#btnInc").addEventListener("click", () => setLevel(S.level + 1));
+$("#btnDec").addEventListener("click", () => setLevel(S.level - 1));
+document.addEventListener("keydown", (e) => { if (e.target.closest && e.target.closest("input")) return; if (e.key === "+" || e.key === "ArrowUp") setLevel(S.level + 1); if (e.key === "-" || e.key === "ArrowDown") setLevel(S.level - 1); });
+$("#speedSeg").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; S.speed = +b.dataset.speed; document.querySelectorAll("#speedSeg button").forEach((x) => x.classList.toggle("on", x === b)); });
+$("#btnPause").addEventListener("click", () => { S.paused = !S.paused; updateUi(); });
+$("#btnReset").addEventListener("click", () => { resetState(); resetSw(); bubbles.length = balloons.length = ions.length = 0; updateUi(); updateCharts(); });
+const toggleValve = () => { S.valve = !S.valve; updateUi(); };
+$("#btnValve").addEventListener("click", toggleValve);
+$("#valve").addEventListener("click", toggleValve);
+$("#valve").addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleValve(); } });
+function setCh(c) { S.ch = c; $("#chPV").classList.toggle("on", c === "pv"); $("#chFC").classList.toggle("on", c === "fc"); updateUi(); }
+[["#chPV", "pv"], ["#chFC", "fc"]].forEach(([s, c]) => { const n = $(s); n.addEventListener("click", () => setCh(c)); n.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setCh(c); } }); });
+$("#btnSw").addEventListener("click", () => { S.sw.run ? stopSw(false) : startSw(); updateUi(); });
+$("#btnSwReset").addEventListener("click", () => { resetSw(); updateUi(); });
+$("#btnRec").addEventListener("click", () => { addRecord("snap"); toast(t("tSaved")); });
+$("#btnClearRec").addEventListener("click", () => { records = []; renderRecords(); updateC3(); });
+$("#btnCsv").addEventListener("click", () => {
+  try { const blob = new Blob(["﻿" + csvText(";")], { type: "text/csv;charset=utf-8" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "h2_dijital_ikiz_olcumler.csv"; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); } catch (e) {}
+  toast(t("tCsv"));
+});
+$("#btnCopy").addEventListener("click", () => {
+  const txt = csvText("\t");
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(() => toast(t("tCopied")), () => toast(t("tCopyFail")));
+  else toast(t("tCopyFail"));
+});
+document.querySelectorAll(".tab").forEach((tb) => tb.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach((x) => { const on = x === tb; x.setAttribute("aria-selected", on); document.getElementById(x.getAttribute("aria-controls")).hidden = !on; });
+  if (tb.id === "tb1") { [c0, c1, c2, c3].forEach((c) => c && c.resize()); }
+}));
+$("#btnLang").addEventListener("click", () => { lang = lang === "tr" ? "en" : "tr"; applyLang(); });
+$("#btnTheme").addEventListener("click", () => {
+  const root = document.documentElement, cur = root.getAttribute("data-theme");
+  const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  root.setAttribute("data-theme", isDark ? "light" : "dark"); makeCharts();
+});
+if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", makeCharts);
+
+/* ---------- loop ---------- */
+let last = performance.now(), uiAcc = 0, chAcc = 0, recNow = 0;
+const REC = /[?&]record\b/.test(location.search);   // video capture: frames are advanced by tick()
+function frame(now) {
+  const rdt = Math.min(0.1, (now - last) / 1000); last = now;
+  tick(rdt, now);
+  requestAnimationFrame(frame);
+}
+function tick(rdt, now) {
+  if (!S.paused) {
+    let simDt = rdt * S.speed;
+    const n = Math.max(1, Math.ceil(simDt / 0.5)), h = simDt / n;
+    for (let i = 0; i < n; i++) { if (S.sw.run) S.sw.q += S.I * h; step(h); }
+  }
+  animate(rdt, now);
+  uiAcc += rdt; chAcc += rdt;
+  if (uiAcc > 0.2) { uiAcc = 0; updateUi(); }
+  if (chAcc > 1) { chAcc = 0; updateCharts(); }
+}
+// warm start: show the rig already running for a minute
+for (let i = 0; i < 120; i++) step(0.5);
+window.__twin = { S, setLevel, step, h2Rate, faradayRate, IPH, levelG, solveFc,
+  tick: (dt) => { recNow += dt * 1000; tick(dt, recNow); } };
+applyLang();
+if (!REC) requestAnimationFrame(frame);
+})();
+</script>
+<!--ARTIFACT-END-->
+</body>
+</html>
